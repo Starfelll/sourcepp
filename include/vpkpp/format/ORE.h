@@ -14,7 +14,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path);
 
 	/// Open an ORE file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "E7E541C05CFE4934B1CDA931EF2E1D99";
 

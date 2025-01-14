@@ -19,7 +19,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path);
 
 	/// Open a WAD3 file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "1B4D626A278F47B9B2D4ADB244218B03";
 

@@ -18,7 +18,7 @@ std::unique_ptr<PackFile> ORE::create(const std::string& path) {
 	return ORE::open(path);
 }
 
-std::unique_ptr<PackFile> ORE::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> ORE::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

@@ -25,7 +25,7 @@ protected:
 
 public:
 	/// Open a GMA file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "49191CA83B7B4EBBA86D0EA364AAC457";
 

@@ -18,7 +18,7 @@ std::unique_ptr<PackFile> PAK::create(const std::string& path, bool hrot) {
 	return PAK::open(path);
 }
 
-std::unique_ptr<PackFile> PAK::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> PAK::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

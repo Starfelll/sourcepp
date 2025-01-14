@@ -17,7 +17,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path);
 
 	/// Open a ZIP file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "3F3FDBC4F5D44B1F8A8E3AF5611B561B";
 

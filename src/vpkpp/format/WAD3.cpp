@@ -58,7 +58,7 @@ std::unique_ptr<PackFile> WAD3::create(const std::string& path) {
 	return WAD3::open(path);
 }
 
-std::unique_ptr<PackFile> WAD3::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> WAD3::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

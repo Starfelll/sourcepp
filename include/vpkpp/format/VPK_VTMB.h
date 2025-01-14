@@ -12,7 +12,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path);
 
 	/// Open Vampire: The Masquerade - Bloodlines VPK files
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "5942653FBD0F4A2D9EF33CDDA668C396";
 

@@ -16,7 +16,7 @@ enum class OLEntryType : uint32_t {
 
 } // namespace
 
-std::unique_ptr<PackFile> OL::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> OL::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

@@ -78,7 +78,7 @@ std::unique_ptr<PackFile> VPK::create(const std::string& path, uint32_t version)
 	return VPK::open(path);
 }
 
-std::unique_ptr<PackFile> VPK::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> VPK::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	std::unique_ptr<PackFile> vpk;
 
 	// Try loading the directory VPK first if this is a numbered archive and the dir exists
@@ -86,23 +86,24 @@ std::unique_ptr<PackFile> VPK::open(const std::string& path, const EntryCallback
 		auto dirPath = path.substr(0, path.length() - 8) + "_dir.vpk";
 		auto pathEnd = path.substr(path.length() - 8, path.length());
 		if (string::matches(pathEnd, "_%d%d%d.vpk") && std::filesystem::exists(dirPath)) {
-			vpk = VPK::openInternal(dirPath, callback);
+			vpk = VPK::openInternal(dirPath, callback, characterEncoding);
 			if (vpk) {
 				return vpk;
 			}
 		}
 	}
 
-	return VPK::openInternal(path, callback);
+	return VPK::openInternal(path, callback, characterEncoding);
 }
 
-std::unique_ptr<PackFile> VPK::openInternal(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> VPK::openInternal(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;
 	}
 
 	auto* vpk = new VPK{path};
+	vpk->characterEncoding = characterEncoding;
 	auto packFile = std::unique_ptr<PackFile>{vpk};
 
 	FileStream reader{vpk->fullFilePath};
@@ -174,7 +175,7 @@ std::unique_ptr<PackFile> VPK::openInternal(const std::string& path, const Entry
 					entryPath += entryName + '.';
 					entryPath += extension;
 				}
-				entryPath = vpk->cleanEntryPath(entryPath);
+				entryPath = vpk->cleanEntryPath(vpk->decodeString(entryPath));
 
 				reader.read(entry.crc32);
 				auto preloadedDataSize = reader.read<uint16_t>();
@@ -587,10 +588,10 @@ bool VPK::bake(const std::string& outputDir_, BakeOptions options, const EntryCa
 
 	// File tree data
 	for (auto& [ext, dirs] : temp) {
-		outDir.write(ext);
+		outDir.write(this->encodeString(ext));
 
 		for (auto& [dir, tempEntries] : dirs) {
-			outDir.write(!dir.empty() ? dir : " ");
+			outDir.write(!dir.empty() ? this->encodeString(dir) : " ");
 
 			for (auto& [path, entry] : tempEntries) {
 				// Calculate entry offset if it's unbaked and upload the data
@@ -656,7 +657,7 @@ bool VPK::bake(const std::string& outputDir_, BakeOptions options, const EntryCa
 					entry->flags = 0;
 				}
 
-				outDir.write(std::filesystem::path{path}.stem().string());
+				outDir.write(this->encodeString(std::filesystem::path{ path }.stem().string()));
 				outDir.write(entry->crc32);
 				outDir.write<uint16_t>(entry->extraData.size());
 				outDir.write<uint16_t>(entry->archiveIndex);

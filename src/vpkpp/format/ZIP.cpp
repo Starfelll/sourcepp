@@ -43,7 +43,7 @@ std::unique_ptr<PackFile> ZIP::create(const std::string& path) {
 	return ZIP::open(path);
 }
 
-std::unique_ptr<PackFile> ZIP::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> ZIP::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

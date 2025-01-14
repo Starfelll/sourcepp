@@ -20,7 +20,7 @@ std::unique_ptr<PackFile> VPK_VTMB::create(const std::string& path) {
 	return VPK_VTMB::open(path);
 }
 
-std::unique_ptr<PackFile> VPK_VTMB::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> VPK_VTMB::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

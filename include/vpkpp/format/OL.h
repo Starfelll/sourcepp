@@ -12,7 +12,7 @@ constexpr std::string_view OL_EXTENSION = ".ol";
 class OL : public PackFileReadOnly {
 public:
 	/// Open an OL file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "5982C9BB0C5B4F9184FA0935A3E3C119";
 

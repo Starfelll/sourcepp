@@ -22,7 +22,7 @@ std::unique_ptr<PackFile> FPX::create(const std::string& path) {
 	return FPX::open(path);
 }
 
-std::unique_ptr<PackFile> FPX::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> FPX::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	std::unique_ptr<PackFile> fpx;
 
 	// Try loading the directory FPX first if this is a numbered archive and the dir exists

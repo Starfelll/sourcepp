@@ -44,7 +44,7 @@ public:
 	virtual ~PackFile() = default;
 
 	/// Open a generic pack file. The parser is selected based on the file extension
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	/// Returns a sorted list of supported extensions for opening, e.g. {".bsp", ".vpk"}
 	[[nodiscard]] static std::vector<std::string> getOpenableExtensions();
@@ -187,6 +187,10 @@ public:
 	/// On Windows, some characters and file names are invalid - this escapes the given entry path
 	[[nodiscard]] static std::string escapeEntryPathForWrite(const std::string& path);
 
+	[[nodiscard]] std::string getCharacterEncoding() const;
+
+	void setCharacterEncoding(const std::string& encoding);
+
 protected:
 	explicit PackFile(std::string fullFilePath_);
 
@@ -206,11 +210,15 @@ protected:
 
 	[[nodiscard]] std::string cleanEntryPath(const std::string& path) const;
 
+	[[nodiscard]] std::string decodeString(const std::string& str) const;
+
+	[[nodiscard]] std::string encodeString(const std::string& str) const;
+
 	[[nodiscard]] static Entry createNewEntry();
 
 	[[nodiscard]] static std::optional<std::vector<std::byte>> readUnbakedEntry(const Entry& entry);
 
-	using OpenFactoryFunction = std::function<std::unique_ptr<PackFile>(const std::string& path, const EntryCallback& callback)>;
+	using OpenFactoryFunction = std::function<std::unique_ptr<PackFile>(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding)>;
 
 	static std::unordered_map<std::string, std::vector<OpenFactoryFunction>>& getOpenExtensionRegistry();
 
@@ -219,6 +227,7 @@ protected:
 	std::string fullFilePath;
 	EntryTrie entries;
 	EntryTrie unbakedEntries;
+	std::string characterEncoding;
 };
 
 class PackFileReadOnly : public PackFile {

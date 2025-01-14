@@ -20,7 +20,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path, bool forHROT = false);
 
 	/// Open a PAK file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "C282210FE64D46D1AE364D7E8E925542";
 

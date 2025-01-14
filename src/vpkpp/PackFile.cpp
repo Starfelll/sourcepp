@@ -15,6 +15,7 @@
 // Need to include this so the compiler will think the automatic registry
 // variables in the formats are important enough to initialize :3 (I love C++!)
 #include <vpkpp/vpkpp.h>
+#include <icu.h>
 
 using namespace sourcepp;
 using namespace vpkpp;
@@ -109,13 +110,13 @@ void fixFilePathForWindows(std::string& path) {
 PackFile::PackFile(std::string fullFilePath_)
 		: fullFilePath(std::move(fullFilePath_)) {}
 
-std::unique_ptr<PackFile> PackFile::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> PackFile::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	auto extension = std::filesystem::path{path}.extension().string();
 	string::toLower(extension);
 	const auto& registry = PackFile::getOpenExtensionRegistry();
 	if (registry.contains(extension)) {
 		for (const auto& func : registry.at(extension)) {
-			if (auto packFile = func(path, callback)) {
+			if (auto packFile = func(path, callback, characterEncoding)) {
 				return packFile;
 			}
 		}
@@ -679,6 +680,52 @@ std::string PackFile::cleanEntryPath(const std::string& path) const {
 		string::toLower(path_);
 	}
 	return path_;
+}
+
+static std::string stringEncodingConvert(const std::string& toConverterName, const std::string& fromConverterName, const std::string& source) {
+	if (toConverterName.empty() || fromConverterName.empty() || source.empty() || toConverterName == fromConverterName)
+		return source;
+	
+	UErrorCode error = U_ZERO_ERROR;
+	int32_t targetCapacity = source.length() * 2;
+	std::string target;
+	target.resize(targetCapacity);
+
+	int32_t ret = ucnv_convert(toConverterName.data(), fromConverterName.data(), target.data(), targetCapacity, source.data(), source.length(), &error);
+
+	if (U_SUCCESS(error)) {
+		target.resize(static_cast<std::string::size_type>(ret));
+		return target;
+	}
+	else if (error == U_BUFFER_OVERFLOW_ERROR) {
+		target.resize(static_cast<std::string::size_type>(ret));
+		ret = ucnv_convert(toConverterName.data(), fromConverterName.data(), target.data(), targetCapacity, source.data(), source.length(), &error);
+		if (U_SUCCESS(error))
+			return target;
+	}
+	else if (error == U_STRING_NOT_TERMINATED_WARNING) {
+		target.resize(target.size() + 1);
+		return target;
+	}
+
+	//failed
+	return source;
+}
+
+std::string PackFile::decodeString(const std::string& str) const {
+	return stringEncodingConvert("UTF-8", this->characterEncoding, str);
+}
+
+std::string PackFile::encodeString(const std::string& str) const {
+	return stringEncodingConvert(this->characterEncoding, "UTF-8", str);
+}
+
+std::string PackFile::getCharacterEncoding() const {
+	return this->characterEncoding;
+}
+
+void PackFile::setCharacterEncoding(const std::string& encoding) {
+	this->characterEncoding = characterEncoding;
 }
 
 Entry PackFile::createNewEntry() {

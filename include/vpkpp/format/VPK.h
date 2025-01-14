@@ -68,7 +68,7 @@ public:
 	static std::unique_ptr<PackFile> create(const std::string& path, uint32_t version = 2);
 
 	/// Open a VPK file
-	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> open(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	static constexpr inline std::string_view GUID = "98148F7C8701469CB2D8F8620FD738A3";
 
@@ -130,7 +130,7 @@ public:
 protected:
 	using PackFile::PackFile;
 
-	[[nodiscard]] static std::unique_ptr<PackFile> openInternal(const std::string& path, const EntryCallback& callback = nullptr);
+	[[nodiscard]] static std::unique_ptr<PackFile> openInternal(const std::string& path, const EntryCallback& callback = nullptr, const std::string& characterEncoding = "");
 
 	void addEntryInternal(Entry& entry, const std::string& path, std::vector<std::byte>& buffer, EntryOptions options) override;
 

@@ -23,7 +23,7 @@ PakLump::~PakLump() {
 	std::filesystem::remove(this->tempPakLumpPath);
 }
 
-std::unique_ptr<PackFile> PakLump::open(const std::string& path, const EntryCallback& callback) {
+std::unique_ptr<PackFile> PakLump::open(const std::string& path, const EntryCallback& callback, const std::string& characterEncoding) {
 	if (!std::filesystem::exists(path)) {
 		// File does not exist
 		return nullptr;

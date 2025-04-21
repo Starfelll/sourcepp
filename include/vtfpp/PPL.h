@@ -19,7 +19,7 @@ public:
 		std::vector<std::byte> data;
 	};
 
-	explicit PPL(uint32_t checksum_, ImageFormat format_ = ImageFormat::RGB888, uint32_t version_ = 0);
+	explicit PPL(uint32_t modelChecksum, ImageFormat format_ = ImageFormat::RGB888, uint32_t version_ = 0);
 
 	explicit PPL(std::span<const std::byte> pplData);
 
@@ -31,9 +31,9 @@ public:
 
 	void setVersion(uint32_t newVersion);
 
-	[[nodiscard]] uint32_t getChecksum() const;
+	[[nodiscard]] uint32_t getModelChecksum() const;
 
-	void setChecksum(uint32_t newChecksum);
+	void setModelChecksum(uint32_t newChecksum);
 
 	[[nodiscard]] ImageFormat getFormat() const;
 
@@ -51,11 +51,11 @@ public:
 
 	bool setImage(std::span<const std::byte> imageData, ImageFormat format_, uint32_t width, uint32_t height, uint32_t lod = 0);
 
-	bool setImage(std::span<const std::byte> imageData, ImageFormat format_, uint32_t width, uint32_t height, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	bool setImage(std::span<const std::byte> imageData, ImageFormat format_, uint32_t width, uint32_t height, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	bool setImage(const std::string& imagePath, uint32_t lod = 0);
 
-	bool setImage(const std::string& imagePath, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	bool setImage(const std::string& imagePath, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	[[nodiscard]] std::vector<std::byte> saveImageToFile(uint32_t lod = 0, ImageConversion::FileFormat fileFormat = ImageConversion::FileFormat::DEFAULT) const;
 

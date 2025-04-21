@@ -5,6 +5,7 @@ add_pretty_parser(vpkpp
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/FPX.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/GCF.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/GMA.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/HOG.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/OL.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/OO7.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/ORE.h"
@@ -12,7 +13,9 @@ add_pretty_parser(vpkpp
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/PCK.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/VPK.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/VPK_VTMB.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/VPP.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/WAD3.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/XZP.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/format/ZIP.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/Attribute.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/vpkpp/Entry.h"
@@ -23,6 +26,7 @@ add_pretty_parser(vpkpp
         "${CMAKE_CURRENT_LIST_DIR}/format/FPX.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/GCF.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/GMA.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/format/HOG.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/OL.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/OO7.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/ORE.cpp"
@@ -30,10 +34,12 @@ add_pretty_parser(vpkpp
         "${CMAKE_CURRENT_LIST_DIR}/format/PCK.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/VPK.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/VPK_VTMB.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/format/VPP.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/WAD3.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/format/XZP.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/format/ZIP.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/PackFile.cpp")
 
 if(SOURCEPP_VPKPP_SUPPORT_VPK_V54)
-    target_compile_definitions(vpkpp PRIVATE VPKPP_SUPPORT_VPK_V54)
+    target_compile_definitions(sourcepp_vpkpp PRIVATE VPKPP_SUPPORT_VPK_V54)
 endif()

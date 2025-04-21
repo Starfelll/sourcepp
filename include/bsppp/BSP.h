@@ -18,7 +18,7 @@
 namespace bsppp {
 
 constexpr auto BSP_SIGNATURE = sourcepp::parser::binary::makeFourCC("VBSP");
-constexpr auto LZMA_VALVE_SIGNATURE = sourcepp::parser::binary::makeFourCC("LZMA");
+constexpr auto BSP_CONSOLE_SIGNATURE = sourcepp::parser::binary::makeFourCC("PSBV");
 
 enum class BSPLump : int32_t {
 	UNKNOWN = -1,
@@ -157,6 +157,14 @@ public:
 
 	void setMapRevision(uint32_t mapRevision);
 
+	[[nodiscard]] bool isL4D2() const;
+
+	void setL4D2(bool isL4D2);
+
+	[[nodiscard]] bool isConsole() const;
+
+	void setConsole(bool isConsole);
+
 	[[nodiscard]] bool hasLump(BSPLump lumpIndex) const;
 
 	[[nodiscard]] bool isLumpCompressed(BSPLump lumpIndex) const;
@@ -250,10 +258,6 @@ protected:
 
 	[[nodiscard]] std::vector<BSPGameLump> parseGameLumps(bool decompress) const;
 
-	[[nodiscard]] static std::optional<std::vector<std::byte>>	compressLumpData(const std::span<const std::byte> data, uint8_t compressLevel = 6);
-
-	[[nodiscard]] static std::optional<std::vector<std::byte>>	decompressLumpData(const std::span<const std::byte> data);
-
 	std::string path;
 	Header header{};
 
@@ -263,7 +267,9 @@ protected:
 	uint32_t stagedMapRevision{};
 
 	// Slightly different header despite using the same version just to be quirky
-	bool isL4D2 = false;
+	bool l4d2 = false;
+	// BSP is mostly big-endian
+	bool console = false;
 };
 
 } // namespace bsppp

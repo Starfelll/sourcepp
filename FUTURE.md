@@ -1,41 +1,49 @@
 ### Future Projects
 
-- Source filesystem accessor (`fspp`)
 - VMF parser/writer (`vmfpp`)
 - VMT parser (`vmtpp`)
 
 ### Future Improvements
 
 - External
-  - Move from cryptopp to a maintained cryptography library
   - Move from compressonator to something that isn't a pile of garbage
-  - Fork minizip-ng and change how it handles dependencies
+    - There is literally nothing else that supports BC6H
 - `bsppp`
+  - Console paklump support
+    - Note that XBOX uses PC format. X360, PS3 do not
   - Support parsing more lumps
   - Think about GoldSrc support
 - `dmxpp`
   - Add support for v9+ DMX files
   - Add support for keyvalues2 and keyvalues2_flat formats
   - Add write support
+- `fspp`
+  - Continue adding Source engine filesystem features
 - `gamepp`
   - Add a function to create instances of a game rather than just finding existing ones
     - When creating an instance of the game, attaching a console might be easier, or enabling -condebug,
       which would then allow reading output from the console
   - Add a method to take a screenshot of the game and move the file to a user-specified location
 - `kvpp`
-  - Reduce template spam
-  - Move DMX/KV2 code here
   - Add a KV3 parser/writer
+  - Move DMX/KV2 code here
 - `mdlpp`
-  - Parse animations/sequences
-  - Make something to construct StudioModel objects from a given model file like obj/glTF?
   - Add a save method to write the constituent parts of a StudioModel to disk
+  - Add an SMD parser/writer
+  - Make something to construct StudioModel objects from a given model file like obj/glTF?
+  - Parse animations/sequences
+- `sndpp`
+  - WAV write support
+  - XWV write support
 - `toolpp`
   - Perhaps add the ability to parse TeamSpen's additions to the FGD format?
 - `vcryptpp`
   - Add VFONT write support
 - `vpkpp`
   - Cache file handles so they're not constantly getting closed/opened
+  - XZP write support
 - `vtfpp`
-  - Allow directly applying an HDRI to a VTF without requiring the user to write a custom wrapper
   - Add a MKS parser/writer
+  - Add DPID resize filter
+  - Allow directly applying an HDRI to a VTF without requiring the user to write a custom wrapper
+  - XTF support

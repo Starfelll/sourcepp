@@ -1,7 +1,5 @@
 #pragma once
 
-#include <tuple>
-
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/pair.h>
@@ -165,8 +163,10 @@ void register_python(py::module_& m) {
 			.value("BOX",           ResizeFilter::BOX)
 			.value("BILINEAR",      ResizeFilter::BILINEAR)
 			.value("CUBIC_BSPLINE", ResizeFilter::CUBIC_BSPLINE)
-			.value("CATMULLROM",    ResizeFilter::CATMULLROM)
+			.value("CATMULL_ROM",   ResizeFilter::CATMULL_ROM)
 			.value("MITCHELL",      ResizeFilter::MITCHELL)
+			.value("POINT_SAMPLE",  ResizeFilter::POINT_SAMPLE)
+			.value("KAISER",        ResizeFilter::KAISER)
 			.export_values();
 
 		py::enum_<ResizeMethod>(ImageConversion, "ResizeMethod")
@@ -212,14 +212,14 @@ void register_python(py::module_& m) {
 		});
 
 	cPPL
-		.def(py::init<uint32_t, ImageFormat, uint32_t>(), py::arg("checksum"), py::arg("format") = ImageFormat::RGB888, py::arg("version") = 0)
+		.def(py::init<uint32_t, ImageFormat, uint32_t>(), py::arg("model_checksum"), py::arg("format") = ImageFormat::RGB888, py::arg("version") = 0)
 		.def("__init__", [](PPL* self, const py::bytes& pplData) {
 			return new(self) PPL{{reinterpret_cast<const std::byte*>(pplData.data()), pplData.size()}};
 		}, py::arg("ppl_data"))
 		.def(py::init<const std::string&>(), py::arg("path"))
 		.def("__bool__", &PPL::operator bool, py::is_operator())
 		.def_prop_rw("version", &PPL::getVersion, &PPL::setVersion)
-		.def_prop_rw("checksum", &PPL::getChecksum, &PPL::setChecksum)
+		.def_prop_rw("model_checksum", &PPL::getModelChecksum, &PPL::setModelChecksum)
 		.def_prop_rw("format", &PPL::getFormat, &PPL::setFormat)
 		.def("has_image_for_lod", &PPL::hasImageForLOD, py::arg("lod"))
 		.def_prop_ro("image_lods", &PPL::getImageLODs)
@@ -235,11 +235,11 @@ void register_python(py::module_& m) {
 		.def("set_image", [](PPL& self, const py::bytes& imageData, ImageFormat format, uint32_t width, uint32_t height, uint32_t lod = 0) {
 			self.setImage({reinterpret_cast<const std::byte*>(imageData.data()), imageData.size()}, format, width, height, lod);
 		}, py::arg("imageData"), py::arg("format"), py::arg("width"), py::arg("height"), py::arg("lod") = 0)
-		.def("set_image_resized", [](PPL& self, const py::bytes& imageData, ImageFormat format, uint32_t width, uint32_t height, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR) {
+		.def("set_image_resized", [](PPL& self, const py::bytes& imageData, ImageFormat format, uint32_t width, uint32_t height, uint32_t resizedWidth, uint32_t resizedHeight, uint32_t lod = 0, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT) {
 			self.setImage({reinterpret_cast<const std::byte*>(imageData.data()), imageData.size()}, format, width, height, resizedWidth, resizedHeight, lod, filter);
-		}, py::arg("imageData"), py::arg("format"), py::arg("width"), py::arg("height"), py::arg("resized_width"), py::arg("resized_height"), py::arg("lod") = 0, py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR)
+		}, py::arg("imageData"), py::arg("format"), py::arg("width"), py::arg("height"), py::arg("resized_width"), py::arg("resized_height"), py::arg("lod") = 0, py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT)
 		.def("set_image_from_file", py::overload_cast<const std::string&, uint32_t>(&PPL::setImage), py::arg("image_path"), py::arg("lod") = 0)
-		.def("set_image_resized_from_file", py::overload_cast<const std::string&, uint32_t, uint32_t, uint32_t, ImageConversion::ResizeFilter>(&PPL::setImage), py::arg("image_path"), py::arg("resized_width"), py::arg("resized_height"), py::arg("lod") = 0, py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR)
+		.def("set_image_resized_from_file", py::overload_cast<const std::string&, uint32_t, uint32_t, uint32_t, ImageConversion::ResizeFilter>(&PPL::setImage), py::arg("image_path"), py::arg("resized_width"), py::arg("resized_height"), py::arg("lod") = 0, py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT)
 		.def("save_image", [](const PPL& self, uint32_t lod = 0, ImageConversion::FileFormat fileFormat = ImageConversion::FileFormat::DEFAULT) {
 			const auto d = self.saveImageToFile(lod, fileFormat);
 			return py::bytes{d.data(), d.size()};
@@ -289,6 +289,33 @@ void register_python(py::module_& m) {
 		})
 		.def("bake_to_file", py::overload_cast<const std::string&>(&SHT::bake, py::const_), py::arg("sht_path"));
 
+	vtfpp.attr("TTH_SIGNATURE") = TTH_SIGNATURE;
+
+	auto cVTF = py::class_<VTF>(vtfpp, "VTF");
+
+	py::class_<TTX>(vtfpp, "TTX")
+		.def(py::init<VTF&&>(), py::arg("vtf"))
+		.def("__init__", [](TTX* self, const py::bytes& tthData, const py::bytes& ttzData) {
+			return new(self) TTX{{reinterpret_cast<const std::byte*>(tthData.data()), tthData.size()}, {reinterpret_cast<const std::byte*>(ttzData.data()), ttzData.size()}};
+		}, py::arg("tth_data"), py::arg("ttz_data"))
+		.def(py::init<const std::string&, const std::string&>(), py::arg("tth_path"), py::arg("ttz_path"))
+		.def("__bool__", &TTX::operator bool, py::is_operator())
+		.def_prop_rw("version_major", &TTX::getMajorVersion, &TTX::setMajorVersion)
+		.def_prop_rw("version_minor", &TTX::getMinorVersion, &TTX::setMinorVersion)
+		.def_prop_rw("aspect_ratio_type", &TTX::getAspectRatioType, &TTX::setAspectRatioType)
+		.def_prop_rw("mip_flags", py::overload_cast<>(&TTX::getMipFlags, py::const_), [](TTX& self, const std::vector<uint64_t>& mipFlags) {
+			self.getMipFlags() = mipFlags;
+		}, py::rv_policy::reference_internal)
+		.def_prop_rw("vtf", py::overload_cast<>(&TTX::getVTF, py::const_), [](TTX& self, const VTF& vtf) {
+			self.getVTF() = vtf;
+		}, py::rv_policy::reference_internal)
+		.def_prop_rw("compression_level", &TTX::getCompressionLevel, &TTX::setCompressionLevel)
+		.def("bake", [](const TTX& self) -> std::pair<py::bytes, py::bytes> {
+			const auto d = self.bake();
+			return {py::bytes{d.first.data(), d.first.size()}, py::bytes{d.second.data(), d.second.size()}};
+		})
+		.def("bake_to_file", py::overload_cast<const std::string&, const std::string&>(&TTX::bake, py::const_), py::arg("tth_path"), py::arg("ttz_path"));
+
 	vtfpp.attr("VTF_SIGNATURE") = VTF_SIGNATURE;
 
 	py::enum_<CompressionMethod>(vtfpp, "CompressionMethod", py::is_arithmetic())
@@ -328,71 +355,80 @@ void register_python(py::module_& m) {
 		.def("get_data_as_aux_compression_method", &Resource::getDataAsAuxCompressionMethod)
 		.def("get_data_as_aux_compression_length", &Resource::getDataAsAuxCompressionLength, py::arg("mip"), py::arg("mip_count"), py::arg("frame"), py::arg("frame_count"), py::arg("face"), py::arg("face_count"));
 
-	auto cVTF = py::class_<VTF>(vtfpp, "VTF");
-
 	py::enum_<VTF::Flags>(cVTF, "Flags", py::is_flag())
-		.value("NONE",                                    VTF::FLAG_NONE)
-		.value("POINT_SAMPLE",                            VTF::FLAG_POINT_SAMPLE)
-		.value("TRILINEAR",                               VTF::FLAG_TRILINEAR)
-		.value("CLAMP_S",                                 VTF::FLAG_CLAMP_S)
-		.value("CLAMP_T",                                 VTF::FLAG_CLAMP_T)
-		.value("ANISOTROPIC",                             VTF::FLAG_ANISOTROPIC)
-		.value("HINT_DXT5",                               VTF::FLAG_HINT_DXT5)
-		.value("SRGB",                                    VTF::FLAG_SRGB)
-		.value("NO_COMPRESS",                             VTF::FLAG_NO_COMPRESS)
-		.value("NORMAL",                                  VTF::FLAG_NORMAL)
-		.value("NO_MIP",                                  VTF::FLAG_NO_MIP)
-		.value("NO_LOD",                                  VTF::FLAG_NO_LOD)
-		.value("LOAD_LOWEST_MIPS",                        VTF::FLAG_LOAD_LOWEST_MIPS)
-		.value("PROCEDURAL",                              VTF::FLAG_PROCEDURAL)
-		.value("ONE_BIT_ALPHA",                           VTF::FLAG_ONE_BIT_ALPHA)
-		.value("MULTI_BIT_ALPHA",                         VTF::FLAG_MULTI_BIT_ALPHA)
-		.value("ENVMAP",                                  VTF::FLAG_ENVMAP)
-		.value("RENDERTARGET",                            VTF::FLAG_RENDERTARGET)
-		.value("DEPTH_RENDERTARGET",                      VTF::FLAG_DEPTH_RENDERTARGET)
-		.value("NO_DEBUG_OVERRIDE",                       VTF::FLAG_NO_DEBUG_OVERRIDE)
-		.value("SINGLE_COPY",                             VTF::FLAG_SINGLE_COPY)
-		.value("ONE_OVER_MIP_LEVEL_IN_ALPHA",             VTF::FLAG_ONE_OVER_MIP_LEVEL_IN_ALPHA)
-		.value("PREMULTIPLY_COLOR_BY_ONE_OVER_MIP_LEVEL", VTF::FLAG_PREMULTIPLY_COLOR_BY_ONE_OVER_MIP_LEVEL)
-		.value("NORMAL_TO_DUDV",                          VTF::FLAG_NORMAL_TO_DUDV)
-		.value("ALPHA_TEST_MIP_GENERATION",               VTF::FLAG_ALPHA_TEST_MIP_GENERATION)
-		.value("NO_DEPTH_BUFFER",                         VTF::FLAG_NO_DEPTH_BUFFER)
-		.value("NICE_FILTERED",                           VTF::FLAG_NICE_FILTERED)
-		.value("CLAMP_U",                                 VTF::FLAG_CLAMP_U)
-		.value("VERTEX_TEXTURE",                          VTF::FLAG_VERTEX_TEXTURE)
-		.value("SSBUMP",                                  VTF::FLAG_SSBUMP)
-		.value("UNFILTERABLE_OK",                         VTF::FLAG_UNFILTERABLE_OK)
-		.value("BORDER",                                  VTF::FLAG_BORDER)
-		.value("SPECVAR_RED",                             VTF::FLAG_SPECVAR_RED)
-		.value("SPECVAR_ALPHA",                           VTF::FLAG_SPECVAR_ALPHA)
+		.value("NONE",                       VTF::FLAG_NONE)
+		.value("POINT_SAMPLE",               VTF::FLAG_POINT_SAMPLE)
+		.value("TRILINEAR",                  VTF::FLAG_TRILINEAR)
+		.value("CLAMP_S",                    VTF::FLAG_CLAMP_S)
+		.value("CLAMP_T",                    VTF::FLAG_CLAMP_T)
+		.value("ANISOTROPIC",                VTF::FLAG_ANISOTROPIC)
+		.value("HINT_DXT5",                  VTF::FLAG_HINT_DXT5)
+		.value("PWL_CORRECTED",              VTF::FLAG_PWL_CORRECTED)
+		.value("NORMAL",                     VTF::FLAG_NORMAL)
+		.value("NO_MIP",                     VTF::FLAG_NO_MIP)
+		.value("NO_LOD",                     VTF::FLAG_NO_LOD)
+		.value("LOAD_ALL_MIPS",              VTF::FLAG_LOAD_ALL_MIPS)
+		.value("PROCEDURAL",                 VTF::FLAG_PROCEDURAL)
+		.value("ONE_BIT_ALPHA",              VTF::FLAG_ONE_BIT_ALPHA)
+		.value("MULTI_BIT_ALPHA",            VTF::FLAG_MULTI_BIT_ALPHA)
+		.value("ENVMAP",                     VTF::FLAG_ENVMAP)
+		.value("RENDERTARGET",               VTF::FLAG_RENDERTARGET)
+		.value("DEPTH_RENDERTARGET",         VTF::FLAG_DEPTH_RENDERTARGET)
+		.value("NO_DEBUG_OVERRIDE",          VTF::FLAG_NO_DEBUG_OVERRIDE)
+		.value("SINGLE_COPY",                VTF::FLAG_SINGLE_COPY)
+		.value("SRGB",                       VTF::FLAG_SRGB)
+		.value("DEFAULT_POOL",               VTF::FLAG_DEFAULT_POOL)
+		.value("COMBINED",                   VTF::FLAG_COMBINED)
+		.value("ASYNC_DOWNLOAD",             VTF::FLAG_ASYNC_DOWNLOAD)
+		.value("NO_DEPTH_BUFFER",            VTF::FLAG_NO_DEPTH_BUFFER)
+		.value("SKIP_INITIAL_DOWNLOAD",      VTF::FLAG_SKIP_INITIAL_DOWNLOAD)
+		.value("CLAMP_U",                    VTF::FLAG_CLAMP_U)
+		.value("VERTEX_TEXTURE",             VTF::FLAG_VERTEX_TEXTURE)
+		.value("XBOX_PRESWIZZLED",           VTF::FLAG_XBOX_PRESWIZZLED)
+		.value("SSBUMP",                     VTF::FLAG_SSBUMP)
+		.value("XBOX_CACHEABLE",             VTF::FLAG_XBOX_CACHEABLE)
+		.value("LOAD_MOST_MIPS",             VTF::FLAG_LOAD_MOST_MIPS)
+		.value("BORDER",                     VTF::FLAG_BORDER)
+		.value("YCOCG",                      VTF::FLAG_YCOCG)
+		.value("ASYNC_SKIP_INITIAL_LOW_RES", VTF::FLAG_ASYNC_SKIP_INITIAL_LOW_RES)
+		.export_values();
+
+	py::enum_<VTF::Platform>(cVTF, "Platform")
+		.value("UNKNOWN",       VTF::PLATFORM_UNKNOWN)
+		.value("PC",            VTF::PLATFORM_PC)
+		.value("PS3_PORTAL2",   VTF::PLATFORM_PS3_PORTAL2)
+		.value("PS3_ORANGEBOX", VTF::PLATFORM_PS3_ORANGEBOX)
+		.value("X360",          VTF::PLATFORM_X360)
 		.export_values();
 
 	py::class_<VTF::CreationOptions>(cVTF, "CreationOptions")
 		.def(py::init<>())
-		.def_rw("major_version",        &VTF::CreationOptions::majorVersion)
-		.def_rw("minor_version",        &VTF::CreationOptions::minorVersion)
-		.def_rw("output_format",        &VTF::CreationOptions::outputFormat)
-		.def_rw("width_resize_method",  &VTF::CreationOptions::widthResizeMethod)
-		.def_rw("height_resize_method", &VTF::CreationOptions::heightResizeMethod)
-		.def_rw("filter",               &VTF::CreationOptions::filter)
-		.def_rw("flags",                &VTF::CreationOptions::flags)
-		.def_rw("initial_frame_count",  &VTF::CreationOptions::initialFrameCount)
-		.def_rw("start_frame",          &VTF::CreationOptions::startFrame)
-		.def_rw("is_cubemap",           &VTF::CreationOptions::isCubeMap)
-		.def_rw("has_spheremap",        &VTF::CreationOptions::hasSphereMap)
-		.def_rw("initial_slice_count",  &VTF::CreationOptions::initialSliceCount)
-		.def_rw("create_mips",          &VTF::CreationOptions::createMips)
-		.def_rw("create_thumbnail",     &VTF::CreationOptions::createThumbnail)
-		.def_rw("create_reflectivity",  &VTF::CreationOptions::createReflectivity)
-		.def_rw("compression_level",    &VTF::CreationOptions::compressionLevel)
-		.def_rw("compression_method",   &VTF::CreationOptions::compressionMethod)
-		.def_rw("bumpmap_scale",        &VTF::CreationOptions::bumpMapScale);
+		.def_rw("major_version",              &VTF::CreationOptions::majorVersion)
+		.def_rw("minor_version",              &VTF::CreationOptions::minorVersion)
+		.def_rw("output_format",              &VTF::CreationOptions::outputFormat)
+		.def_rw("width_resize_method",        &VTF::CreationOptions::widthResizeMethod)
+		.def_rw("height_resize_method",       &VTF::CreationOptions::heightResizeMethod)
+		.def_rw("filter",                     &VTF::CreationOptions::filter)
+		.def_rw("flags",                      &VTF::CreationOptions::flags)
+		.def_rw("initial_frame_count",        &VTF::CreationOptions::initialFrameCount)
+		.def_rw("start_frame",                &VTF::CreationOptions::startFrame)
+		.def_rw("is_cubemap",                 &VTF::CreationOptions::isCubeMap)
+		.def_rw("has_spheremap",              &VTF::CreationOptions::hasSphereMap)
+		.def_rw("initial_slice_count",        &VTF::CreationOptions::initialSliceCount)
+		.def_rw("compute_transparency_flags", &VTF::CreationOptions::computeTransparencyFlags)
+		.def_rw("compute_mips",               &VTF::CreationOptions::computeMips)
+		.def_rw("compute_thumbnail",          &VTF::CreationOptions::computeThumbnail)
+		.def_rw("compute_reflectivity",       &VTF::CreationOptions::computeReflectivity)
+		.def_rw("compression_level",          &VTF::CreationOptions::compressionLevel)
+		.def_rw("compression_method",         &VTF::CreationOptions::compressionMethod)
+		.def_rw("bumpmap_scale",              &VTF::CreationOptions::bumpMapScale);
 
 	cVTF
-		.def_ro_static("FLAG_MASK_GENERATED", &VTF::FLAG_MASK_GENERATED)
-		.def_ro_static("FORMAT_UNCHANGED",    &VTF::FORMAT_UNCHANGED)
-		.def_ro_static("FORMAT_DEFAULT",      &VTF::FORMAT_DEFAULT)
-		.def_ro_static("MAX_RESOURCES",       &VTF::MAX_RESOURCES)
+		.def_ro_static("FLAG_MASK_AFTER_V7_3", &VTF::FLAG_MASK_AFTER_V7_3)
+		.def_ro_static("FLAG_MASK_INTERNAL",   &VTF::FLAG_MASK_INTERNAL)
+		.def_ro_static("FLAG_MASK_SRGB",       &VTF::FLAG_MASK_SRGB)
+		.def_ro_static("FORMAT_UNCHANGED",     &VTF::FORMAT_UNCHANGED)
+		.def_ro_static("FORMAT_DEFAULT",       &VTF::FORMAT_DEFAULT)
 		.def(py::init<>())
 		.def("__init__", [](VTF* self, const py::bytes& vtfData, bool parseHeaderOnly = false) {
 			return new(self) VTF{std::span{reinterpret_cast<const std::byte*>(vtfData.data()), vtfData.size()}, parseHeaderOnly};
@@ -409,6 +445,7 @@ void register_python(py::module_& m) {
 		.def_static("create_blank", py::overload_cast<ImageFormat, uint16_t, uint16_t, VTF::CreationOptions>(&VTF::create), py::arg("format"), py::arg("width"), py::arg("height"), py::arg("creation_options") = VTF::CreationOptions{})
 		.def_static("create_from_file_and_bake", py::overload_cast<const std::string&, const std::string&, VTF::CreationOptions>(&VTF::create), py::arg("image_path"), py::arg("vtf_path"), py::arg("creation_options") = VTF::CreationOptions{})
 		.def_static("create_from_file", py::overload_cast<const std::string&, VTF::CreationOptions>(&VTF::create), py::arg("image_path"), py::arg("creation_options") = VTF::CreationOptions{})
+		.def_prop_rw("platform", &VTF::getPlatform, &VTF::setPlatform)
 		.def_prop_rw("version_major", &VTF::getMajorVersion, &VTF::setMajorVersion)
 		.def_prop_rw("version_minor", &VTF::getMinorVersion, &VTF::setMinorVersion)
 		.def_prop_rw("image_width_resize_method", &VTF::getImageWidthResizeMethod, &VTF::setImageWidthResizeMethod)
@@ -421,11 +458,13 @@ void register_python(py::module_& m) {
 		.def_prop_rw("flags", &VTF::getFlags, &VTF::setFlags)
 		.def("add_flags", &VTF::addFlags, py::arg("flags"))
 		.def("remove_flags", &VTF::removeFlags, py::arg("flags"))
+		.def("compute_transparency_flags", &VTF::computeTransparencyFlags)
+		.def_static("get_default_compressed_format", &VTF::getDefaultCompressedFormat, py::arg("input_format"), py::arg("major_version"), py::arg("minor_version"))
 		.def_prop_ro("format", &VTF::getFormat)
-		.def("set_format", &VTF::setFormat, py::arg("new_format"), py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR)
+		.def("set_format", &VTF::setFormat, py::arg("new_format"), py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT)
 		.def_prop_rw("mip_count", &VTF::getMipCount, &VTF::setMipCount)
 		.def("set_recommended_mip_count", &VTF::setRecommendedMipCount)
-		.def("compute_mips", &VTF::computeMips, py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR)
+		.def("compute_mips", &VTF::computeMips, py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT)
 		.def_prop_rw("frame_count", &VTF::getFrameCount, &VTF::setFrameCount)
 		.def_prop_ro("face_count", &VTF::getFaceCount)
 		.def("set_face_count", &VTF::setFaceCount, py::arg("is_cubemap"), py::arg("has_spheremap") = false)
@@ -459,7 +498,7 @@ void register_python(py::module_& m) {
 		.def("remove_particle_sheet_resource", &VTF::removeParticleSheetResource)
 		.def("set_crc_resource", &VTF::setCRCResource, py::arg("value"))
 		.def("remove_crc_resource", &VTF::removeCRCResource)
-		.def("set_lod_resource", &VTF::setLODResource, py::arg("u"), py::arg("v"))
+		.def("set_lod_resource", &VTF::setLODResource, py::arg("u"), py::arg("v"), py::arg("u360") = 0, py::arg("v360") = 0)
 		.def("remove_lod_resource", &VTF::removeLODResource)
 		.def("set_extended_flags_resource", &VTF::setExtendedFlagsResource, py::arg("value"))
 		.def("remove_extended_flags_resource", &VTF::removeExtendedFlagsResource)
@@ -481,10 +520,10 @@ void register_python(py::module_& m) {
 			const auto d = self.getImageDataAsRGBA8888(mip, frame, face, slice);
 			return py::bytes{d.data(), d.size()};
 		}, py::arg("mip") = 0, py::arg("frame") = 0, py::arg("face") = 0, py::arg("slice") = 0)
-		.def("set_image", [](VTF& self, const py::bytes& imageData, ImageFormat format, uint16_t width, uint16_t height, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0) {
+		.def("set_image", [](VTF& self, const py::bytes& imageData, ImageFormat format, uint16_t width, uint16_t height, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0) {
 			return self.setImage({reinterpret_cast<const std::byte*>(imageData.data()), imageData.size()}, format, width, height, filter, mip, frame, face, slice);
 		}, py::arg("image_data"), py::arg("format"), py::arg("width"), py::arg("height"), py::arg("filter"), py::arg("mip") = 0, py::arg("frame") = 0, py::arg("face") = 0, py::arg("slice") = 0)
-		.def("set_image_from_file", py::overload_cast<const std::string&, ImageConversion::ResizeFilter, uint8_t, uint16_t, uint8_t, uint16_t>(&VTF::setImage), py::arg("image_path"), py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR, py::arg("mip") = 0, py::arg("frame") = 0, py::arg("face") = 0, py::arg("slice") = 0)
+		.def("set_image_from_file", py::overload_cast<const std::string&, ImageConversion::ResizeFilter, uint8_t, uint16_t, uint8_t, uint16_t>(&VTF::setImage), py::arg("image_path"), py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT, py::arg("mip") = 0, py::arg("frame") = 0, py::arg("face") = 0, py::arg("slice") = 0)
 		.def("save_image", [](const VTF& self, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0, ImageConversion::FileFormat fileFormat = ImageConversion::FileFormat::DEFAULT) {
 			const auto d = self.saveImageToFile(mip, frame, face, slice, fileFormat);
 			return py::bytes{d.data(), d.size()};
@@ -506,7 +545,7 @@ void register_python(py::module_& m) {
 		.def("set_thumbnail", [](VTF& self, const py::bytes& imageData, ImageFormat format, uint16_t width, uint16_t height) {
 			return self.setThumbnail({reinterpret_cast<const std::byte*>(imageData.data()), imageData.size()}, format, width, height);
 		}, py::arg("image_data"), py::arg("format"), py::arg("width"), py::arg("height"))
-		.def("compute_thumbnail", &VTF::computeThumbnail, py::arg("filter") = ImageConversion::ResizeFilter::BILINEAR)
+		.def("compute_thumbnail", &VTF::computeThumbnail, py::arg("filter") = ImageConversion::ResizeFilter::DEFAULT)
 		.def("remove_thumbnail", &VTF::removeThumbnail)
 		.def("save_thumbnail", [](const VTF& self, ImageConversion::FileFormat fileFormat = ImageConversion::FileFormat::DEFAULT) {
 			const auto d = self.saveThumbnailToFile(fileFormat);

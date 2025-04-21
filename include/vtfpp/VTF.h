@@ -18,10 +18,16 @@
 namespace vtfpp {
 
 constexpr uint32_t VTF_SIGNATURE = sourcepp::parser::binary::makeFourCC("VTF\0");
+constexpr uint32_t VTFX_SIGNATURE = sourcepp::parser::binary::makeFourCC("VTFX");
+constexpr uint32_t VTF3_SIGNATURE = sourcepp::parser::binary::makeFourCC("VTF3");
 
 enum class CompressionMethod : int16_t {
+	// Strata Source v7.6 defines
 	DEFLATE = 8,
 	ZSTD = 93,
+
+	// Signify the image resource should be compressed with LZMA on console
+	CONSOLE_LZMA = 0x360,
 };
 
 struct Resource {
@@ -51,7 +57,7 @@ struct Resource {
 		std::monostate, // Anything that would be equivalent to just returning data directly, or used as an error
 		SHT, // Particle Sheet
 		uint32_t, // CRC, TSO
-		std::pair<uint8_t, uint8_t>, // LOD
+		std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>, // LOD
 		std::string, // KVD
 		std::span<uint32_t> // AXC
 	>;
@@ -69,8 +75,8 @@ struct Resource {
 		return std::get<uint32_t>(this->convertData());
 	}
 
-	[[nodiscard]] std::pair<uint8_t, uint8_t> getDataAsLODControlInfo() const {
-		return std::get<std::pair<uint8_t, uint8_t>>(this->convertData());
+	[[nodiscard]] std::tuple<uint8_t, uint8_t, uint8_t, uint8_t> getDataAsLODControlInfo() const {
+		return std::get<std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>>(this->convertData());
 	}
 
 	[[nodiscard]] std::string getDataAsKeyValuesData() const {
@@ -120,42 +126,53 @@ SOURCEPP_BITFLAGS_ENUM(Resource::Flags)
 class VTF {
 public:
 	enum Flags : int32_t {
-		FLAG_NONE                                    = 0,
-		FLAG_POINT_SAMPLE                            = 1 <<  0,
-		FLAG_TRILINEAR                               = 1 <<  1,
-		FLAG_CLAMP_S                                 = 1 <<  2,
-		FLAG_CLAMP_T                                 = 1 <<  3,
-		FLAG_ANISOTROPIC                             = 1 <<  4,
-		FLAG_HINT_DXT5                               = 1 <<  5,
-		FLAG_SRGB                                    = 1 <<  6,
-		FLAG_NO_COMPRESS                             = FLAG_SRGB, // Internal to vtex, removed
-		FLAG_NORMAL                                  = 1 <<  7,
-		FLAG_NO_MIP                                  = 1 <<  8, // Added at VTF creation time
-		FLAG_NO_LOD                                  = 1 <<  9, // Added at VTF creation time
-		FLAG_LOAD_LOWEST_MIPS                        = 1 << 10,
-		FLAG_PROCEDURAL                              = 1 << 11,
-		FLAG_ONE_BIT_ALPHA                           = 1 << 12, // Added at VTF creation time
-		FLAG_MULTI_BIT_ALPHA                         = 1 << 13, // Added at VTF creation time
-		FLAG_ENVMAP                                  = 1 << 14, // Added at VTF creation time
-		FLAG_RENDERTARGET                            = 1 << 15,
-		FLAG_DEPTH_RENDERTARGET                      = 1 << 16,
-		FLAG_NO_DEBUG_OVERRIDE                       = 1 << 17,
-		FLAG_SINGLE_COPY                             = 1 << 18,
-		FLAG_ONE_OVER_MIP_LEVEL_IN_ALPHA             = 1 << 19, // Internal to vtex, removed
-		FLAG_PREMULTIPLY_COLOR_BY_ONE_OVER_MIP_LEVEL = 1 << 20, // Internal to vtex, removed
-		FLAG_NORMAL_TO_DUDV                          = 1 << 21, // Internal to vtex, removed
-		FLAG_ALPHA_TEST_MIP_GENERATION               = 1 << 22, // Internal to vtex, removed
-		FLAG_NO_DEPTH_BUFFER                         = 1 << 23,
-		FLAG_NICE_FILTERED                           = 1 << 24, // Internal to vtex, removed
-		FLAG_CLAMP_U                                 = 1 << 25,
-		FLAG_VERTEX_TEXTURE                          = 1 << 26,
-		FLAG_SSBUMP                                  = 1 << 27,
-		FLAG_UNFILTERABLE_OK                         = 1 << 28, // Removed
-		FLAG_BORDER                                  = 1 << 29,
-		FLAG_SPECVAR_RED                             = 1 << 30, // Removed
-		FLAG_SPECVAR_ALPHA                           = 1 << 31, // Removed
+		FLAG_NONE                       = 0,
+		FLAG_POINT_SAMPLE               = 1 <<  0,
+		FLAG_TRILINEAR                  = 1 <<  1,
+		FLAG_CLAMP_S                    = 1 <<  2,
+		FLAG_CLAMP_T                    = 1 <<  3,
+		FLAG_ANISOTROPIC                = 1 <<  4,
+		FLAG_HINT_DXT5                  = 1 <<  5,
+		FLAG_PWL_CORRECTED              = 1 <<  6,
+		FLAG_NORMAL                     = 1 <<  7,
+		FLAG_NO_MIP                     = 1 <<  8, // Controlled by mip count
+		FLAG_NO_LOD                     = 1 <<  9,
+		FLAG_LOAD_ALL_MIPS              = 1 << 10,
+		FLAG_PROCEDURAL                 = 1 << 11,
+		FLAG_ONE_BIT_ALPHA              = 1 << 12,
+		FLAG_MULTI_BIT_ALPHA            = 1 << 13,
+		FLAG_ENVMAP                     = 1 << 14, // Controlled by face count
+		FLAG_RENDERTARGET               = 1 << 15,
+		FLAG_DEPTH_RENDERTARGET         = 1 << 16,
+		FLAG_NO_DEBUG_OVERRIDE          = 1 << 17,
+		FLAG_SINGLE_COPY                = 1 << 18, // Unused
+		FLAG_SRGB                       = 1 << 19,
+		FLAG_DEFAULT_POOL               = 1 << 20,
+		FLAG_COMBINED                   = 1 << 21,
+		FLAG_ASYNC_DOWNLOAD             = 1 << 22,
+		FLAG_NO_DEPTH_BUFFER            = 1 << 23,
+		FLAG_SKIP_INITIAL_DOWNLOAD      = 1 << 24,
+		FLAG_CLAMP_U                    = 1 << 25,
+		FLAG_VERTEX_TEXTURE             = 1 << 26,
+		FLAG_XBOX_PRESWIZZLED           = 1 << 26,
+		FLAG_SSBUMP                     = 1 << 27,
+		FLAG_XBOX_CACHEABLE             = 1 << 27,
+		FLAG_LOAD_MOST_MIPS             = 1 << 28,
+		FLAG_BORDER                     = 1 << 29,
+		FLAG_YCOCG                      = 1 << 30,
+		FLAG_ASYNC_SKIP_INITIAL_LOW_RES = 1 << 31,
 	};
-	static constexpr std::underlying_type_t<Flags> FLAG_MASK_GENERATED = FLAG_NO_MIP | FLAG_NO_LOD | FLAG_ONE_BIT_ALPHA | FLAG_MULTI_BIT_ALPHA | FLAG_ENVMAP;
+	static constexpr std::underlying_type_t<Flags> FLAG_MASK_AFTER_V7_3 = FLAG_LOAD_ALL_MIPS | FLAG_SRGB | FLAG_DEFAULT_POOL | FLAG_COMBINED | FLAG_ASYNC_DOWNLOAD | FLAG_SKIP_INITIAL_DOWNLOAD | FLAG_LOAD_MOST_MIPS | FLAG_YCOCG | FLAG_ASYNC_SKIP_INITIAL_LOW_RES;
+	static constexpr std::underlying_type_t<Flags> FLAG_MASK_INTERNAL = FLAG_NO_MIP | FLAG_ENVMAP;
+	static constexpr std::underlying_type_t<Flags> FLAG_MASK_SRGB = FLAG_PWL_CORRECTED | FLAG_SRGB;
+
+	enum Platform : uint32_t {
+		PLATFORM_UNKNOWN       = 0x000,
+		PLATFORM_PC            = 0x001,
+		PLATFORM_PS3_PORTAL2   = 0x003,
+		PLATFORM_PS3_ORANGEBOX = 0x333,
+		PLATFORM_X360          = 0x360,
+	};
 
 	struct CreationOptions {
 		uint32_t majorVersion = 7;
@@ -163,16 +180,18 @@ public:
 		ImageFormat outputFormat = FORMAT_DEFAULT;
 		ImageConversion::ResizeMethod widthResizeMethod = ImageConversion::ResizeMethod::POWER_OF_TWO_BIGGER;
 		ImageConversion::ResizeMethod heightResizeMethod = ImageConversion::ResizeMethod::POWER_OF_TWO_BIGGER;
-		ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR;
+		ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT;
 		Flags flags = FLAG_NONE;
 		uint16_t initialFrameCount = 1;
 		uint16_t startFrame = 0;
 		bool isCubeMap = false;
 		bool hasSphereMap = false;
 		uint16_t initialSliceCount = 1;
-		bool createMips = true;
-		bool createThumbnail = true;
-		bool createReflectivity = true;
+		bool computeTransparencyFlags = true;
+		bool computeMips = true;
+		bool computeThumbnail = true;
+		bool computeReflectivity = true;
+		Platform platform = PLATFORM_PC;
 		int16_t compressionLevel = -1;
 		CompressionMethod compressionMethod = CompressionMethod::ZSTD;
 		float bumpMapScale = 1.f;
@@ -183,8 +202,6 @@ public:
 
 	/// This value is only valid when passed to VTF::create through CreationOptions or VTF::setFormat
 	static constexpr auto FORMAT_DEFAULT = static_cast<ImageFormat>(-1);
-
-	static constexpr int32_t MAX_RESOURCES = 32;
 
 	VTF();
 
@@ -204,17 +221,21 @@ public:
 
 	[[nodiscard]] explicit operator bool() const;
 
-	static void create(std::span<const std::byte> imageData, ImageFormat format, uint16_t width, uint16_t height, const std::string& vtfPath, CreationOptions options);
+	static bool create(std::span<const std::byte> imageData, ImageFormat format, uint16_t width, uint16_t height, const std::string& vtfPath, CreationOptions options);
 
-	static void create(ImageFormat format, uint16_t width, uint16_t height, const std::string& vtfPath, CreationOptions options);
+	static bool create(ImageFormat format, uint16_t width, uint16_t height, const std::string& vtfPath, CreationOptions options);
 
 	[[nodiscard]] static VTF create(std::span<const std::byte> imageData, ImageFormat format, uint16_t width, uint16_t height, CreationOptions options);
 
 	[[nodiscard]] static VTF create(ImageFormat format, uint16_t width, uint16_t height, CreationOptions options);
 
-	static void create(const std::string& imagePath, const std::string& vtfPath, CreationOptions options);
+	static bool create(const std::string& imagePath, const std::string& vtfPath, CreationOptions options);
 
 	[[nodiscard]] static VTF create(const std::string& imagePath, CreationOptions options);
+
+	[[nodiscard]] Platform getPlatform() const;
+
+	void setPlatform(Platform newPlatform);
 
 	[[nodiscard]] uint32_t getMajorVersion() const;
 
@@ -250,9 +271,13 @@ public:
 
 	void removeFlags(Flags flags_);
 
+	void computeTransparencyFlags();
+
+	[[nodiscard]] static ImageFormat getDefaultCompressedFormat(ImageFormat inputFormat, uint32_t majorVersion, uint32_t minorVersion);
+
 	[[nodiscard]] ImageFormat getFormat() const;
 
-	void setFormat(ImageFormat newFormat, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	void setFormat(ImageFormat newFormat, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	[[nodiscard]] uint8_t getMipCount() const;
 
@@ -260,7 +285,7 @@ public:
 
 	bool setRecommendedMipCount();
 
-	void computeMips(ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	void computeMips(ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	[[nodiscard]] uint16_t getFrameCount() const;
 
@@ -269,8 +294,6 @@ public:
 	[[nodiscard]] uint8_t getFaceCount() const;
 
 	bool setFaceCount(bool isCubemap, bool hasSphereMap = false);
-
-	//bool computeSphereMap();
 
 	[[nodiscard]] uint16_t getSliceCount() const;
 
@@ -319,7 +342,7 @@ public:
 
 	void removeCRCResource();
 
-	void setLODResource(uint8_t u, uint8_t v);
+	void setLODResource(uint8_t u, uint8_t v, uint8_t u360 = 0, uint8_t v360 = 0);
 
 	void removeLODResource();
 
@@ -349,9 +372,9 @@ public:
 
 	[[nodiscard]] std::vector<std::byte> getImageDataAsRGBA8888(uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0) const;
 
-	bool setImage(std::span<const std::byte> imageData_, ImageFormat format_, uint16_t width_, uint16_t height_, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0);
+	bool setImage(std::span<const std::byte> imageData_, ImageFormat format_, uint16_t width_, uint16_t height_, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0);
 
-	bool setImage(const std::string& imagePath, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0);
+	bool setImage(const std::string& imagePath, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT, uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0);
 
 	[[nodiscard]] std::vector<std::byte> saveImageToFile(uint8_t mip = 0, uint16_t frame = 0, uint8_t face = 0, uint16_t slice = 0, ImageConversion::FileFormat fileFormat = ImageConversion::FileFormat::DEFAULT) const;
 
@@ -367,7 +390,7 @@ public:
 
 	void setThumbnail(std::span<const std::byte> imageData_, ImageFormat format_, uint16_t width_, uint16_t height_);
 
-	void computeThumbnail(ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	void computeThumbnail(ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	void removeThumbnail();
 
@@ -380,8 +403,6 @@ public:
 	bool bake(const std::string& vtfPath) const; // NOLINT(*-use-nodiscard)
 
 protected:
-	[[nodiscard]] ImageFormat getDefaultFormat() const;
-
 	static void createInternal(VTF& writer, CreationOptions options);
 
 	[[nodiscard]] Resource* getResourceInternal(Resource::Type type);
@@ -390,7 +411,7 @@ protected:
 
 	void removeResourceInternal(Resource::Type type);
 
-	void regenerateImageData(ImageFormat newFormat, uint16_t newWidth, uint16_t newHeight, uint8_t newMipCount, uint16_t newFrameCount, uint8_t newFaceCount, uint16_t newSliceCount, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::BILINEAR);
+	void regenerateImageData(ImageFormat newFormat, uint16_t newWidth, uint16_t newHeight, uint8_t newMipCount, uint16_t newFrameCount, uint8_t newFaceCount, uint16_t newSliceCount, ImageConversion::ResizeFilter filter = ImageConversion::ResizeFilter::DEFAULT);
 
 	bool opened = false;
 
@@ -413,10 +434,10 @@ protected:
 	//uint8_t _padding1[4];
 
 	float bumpMapScale{};
-	ImageFormat format{};
+	ImageFormat format = ImageFormat::EMPTY;
 	uint8_t mipCount = 1;
 
-	ImageFormat thumbnailFormat{};
+	ImageFormat thumbnailFormat = ImageFormat::EMPTY;
 	uint8_t thumbnailWidth{};
 	uint8_t thumbnailHeight{};
 
@@ -429,7 +450,8 @@ protected:
 	std::vector<Resource> resources;
 	//uint8_t _padding3[4];
 
-	// These aren't in the header, these are for VTF modification
+	// These aren't in the header
+	Platform platform = PLATFORM_PC;
 	int16_t compressionLevel = 0;
 	CompressionMethod compressionMethod = CompressionMethod::ZSTD;
 	ImageConversion::ResizeMethod imageWidthResizeMethod  = ImageConversion::ResizeMethod::POWER_OF_TWO_BIGGER;

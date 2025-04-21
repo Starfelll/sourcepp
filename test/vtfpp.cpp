@@ -11,13 +11,13 @@ TEST(vtfpp, read_write_ppl) {
 
 	PPL reader{in};
 	EXPECT_EQ(reader.getVersion(), 0);
-	EXPECT_EQ(reader.getChecksum(), 0xa9230a52);
+	EXPECT_EQ(reader.getModelChecksum(), 0xa9230a52);
 	EXPECT_EQ(reader.getFormat(), ImageFormat::RGB888);
 
 	const auto* image = reader.getImageRaw();
 	ASSERT_TRUE(reader);
 
-	PPL writer{reader.getChecksum(), reader.getFormat(), reader.getVersion()};
+	PPL writer{reader.getModelChecksum(), reader.getFormat(), reader.getVersion()};
 	writer.setImage(image->data, reader.getFormat(), image->width, image->height);
 
 	auto out = writer.bake();
@@ -28,7 +28,134 @@ TEST(vtfpp, read_write_ppl) {
 	}
 }
 
-#if 0
+TEST(vtfpp, read_write_ttx) {
+	std::pair<std::vector<std::byte>, std::vector<std::byte>> writtenData;
+	{
+		TTX ttx{ASSET_ROOT "vtfpp/ttx/gloflra.tth", ASSET_ROOT "vtfpp/ttx/gloflra.ttz"};
+		ASSERT_TRUE(ttx);
+
+		// Header
+		EXPECT_EQ(ttx.getMajorVersion(), 1);
+		EXPECT_EQ(ttx.getMinorVersion(), 0);
+		ASSERT_EQ(ttx.getMipFlags().size(), 11);
+		EXPECT_EQ(ttx.getAspectRatioType(), 3);
+		EXPECT_EQ(ttx.getMipFlags()[0], 192);
+		EXPECT_EQ(ttx.getMipFlags()[1], 200);
+		EXPECT_EQ(ttx.getMipFlags()[2], 208);
+		EXPECT_EQ(ttx.getMipFlags()[3], 216);
+		EXPECT_EQ(ttx.getMipFlags()[4], 188978561272);
+		EXPECT_EQ(ttx.getMipFlags()[5], 734439407992);
+		EXPECT_EQ(ttx.getMipFlags()[6], 2740189135736);
+		EXPECT_EQ(ttx.getMipFlags()[7], 9620726745976);
+		EXPECT_EQ(ttx.getMipFlags()[8], 36378373008248);
+		EXPECT_EQ(ttx.getMipFlags()[9], 145384643013496);
+		EXPECT_EQ(ttx.getMipFlags()[10], 577557137369976);
+
+		// VTF
+		const auto& vtf = ttx.getVTF();
+		EXPECT_EQ(vtf.getMajorVersion(), 7);
+		EXPECT_EQ(vtf.getMinorVersion(), 1);
+		EXPECT_EQ(vtf.getWidth(), 1024);
+		EXPECT_EQ(vtf.getHeight(), 1024);
+		EXPECT_EQ(vtf.getFlags(), VTF::FLAG_NONE);
+		EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT1);
+		EXPECT_EQ(vtf.getMipCount(), 11);
+		EXPECT_EQ(vtf.getFrameCount(), 1);
+		EXPECT_EQ(vtf.getFaceCount(), 1);
+		EXPECT_EQ(vtf.getSliceCount(), 1);
+		EXPECT_EQ(vtf.getStartFrame(), 0);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.20940751f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.21449225f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.18495138f);
+		EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+		EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::DXT1);
+		EXPECT_EQ(vtf.getThumbnailWidth(), 16);
+		EXPECT_EQ(vtf.getThumbnailHeight(), 16);
+
+		writtenData = ttx.bake();
+	}
+	{
+		TTX ttx{writtenData.first, writtenData.second};
+		ASSERT_TRUE(ttx);
+
+		// Header
+		EXPECT_EQ(ttx.getMajorVersion(), 1);
+		EXPECT_EQ(ttx.getMinorVersion(), 0);
+		ASSERT_EQ(ttx.getMipFlags().size(), 11);
+		EXPECT_EQ(ttx.getAspectRatioType(), 3);
+		EXPECT_EQ(ttx.getMipFlags()[0], 192);
+		EXPECT_EQ(ttx.getMipFlags()[1], 200);
+		EXPECT_EQ(ttx.getMipFlags()[2], 208);
+		EXPECT_EQ(ttx.getMipFlags()[3], 216);
+		EXPECT_EQ(ttx.getMipFlags()[4], 188978561272);
+		EXPECT_EQ(ttx.getMipFlags()[5], 734439407992);
+		EXPECT_EQ(ttx.getMipFlags()[6], 2740189135736);
+		EXPECT_EQ(ttx.getMipFlags()[7], 9620726745976);
+		EXPECT_EQ(ttx.getMipFlags()[8], 36378373008248);
+		EXPECT_EQ(ttx.getMipFlags()[9], 145384643013496);
+		EXPECT_EQ(ttx.getMipFlags()[10], 577557137369976);
+
+		// VTF
+		const auto& vtf = ttx.getVTF();
+		EXPECT_EQ(vtf.getMajorVersion(), 7);
+		EXPECT_EQ(vtf.getMinorVersion(), 1);
+		EXPECT_EQ(vtf.getWidth(), 1024);
+		EXPECT_EQ(vtf.getHeight(), 1024);
+		EXPECT_EQ(vtf.getFlags(), VTF::FLAG_NONE);
+		EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT1);
+		EXPECT_EQ(vtf.getMipCount(), 11);
+		EXPECT_EQ(vtf.getFrameCount(), 1);
+		EXPECT_EQ(vtf.getFaceCount(), 1);
+		EXPECT_EQ(vtf.getSliceCount(), 1);
+		EXPECT_EQ(vtf.getStartFrame(), 0);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.20940751f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.21449225f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.18495138f);
+		EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+		EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::DXT1);
+		EXPECT_EQ(vtf.getThumbnailWidth(), 16);
+		EXPECT_EQ(vtf.getThumbnailHeight(), 16);
+	}
+}
+
+TEST(vtfpp, read_ttx_no_ttz) {
+	TTX ttx{ASSET_ROOT "vtfpp/ttx/cablenormalmap.tth"};
+	ASSERT_TRUE(ttx);
+
+	// Header
+	EXPECT_EQ(ttx.getMajorVersion(), 1);
+	EXPECT_EQ(ttx.getMinorVersion(), 0);
+	ASSERT_EQ(ttx.getMipFlags().size(), 5);
+	EXPECT_EQ(ttx.getAspectRatioType(), 5);
+	EXPECT_EQ(ttx.getMipFlags()[0], 96);
+	EXPECT_EQ(ttx.getMipFlags()[1], 99);
+	EXPECT_EQ(ttx.getMipFlags()[2], 105);
+	EXPECT_EQ(ttx.getMipFlags()[3], 117);
+	EXPECT_EQ(ttx.getMipFlags()[4], 165);
+
+	// VTF
+	const auto& vtf = ttx.getVTF();
+	EXPECT_EQ(vtf.getMajorVersion(), 7);
+	EXPECT_EQ(vtf.getMinorVersion(), 1);
+	EXPECT_EQ(vtf.getWidth(), 16);
+	EXPECT_EQ(vtf.getHeight(), 4);
+	EXPECT_EQ(vtf.getFlags(), 196); // VTF flags are probably different on this engine branch
+	EXPECT_EQ(vtf.getFormat(), ImageFormat::BGR888);
+	EXPECT_EQ(vtf.getMipCount(), 5);
+	EXPECT_EQ(vtf.getFrameCount(), 1);
+	EXPECT_EQ(vtf.getFaceCount(), 1);
+	EXPECT_EQ(vtf.getSliceCount(), 1);
+	EXPECT_EQ(vtf.getStartFrame(), static_cast<uint16_t>(-1));
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.32940885f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.21175662f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.74329108f);
+	EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+	EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::DXT1);
+	EXPECT_EQ(vtf.getThumbnailWidth(), 16);
+	EXPECT_EQ(vtf.getThumbnailHeight(), 4);
+}
+
+#ifdef SOURCEPP_BUILD_TESTS_EXTRA
 
 #define TEST_WRITE_FMT(Format, Flags) \
 		TEST(vtfpp, write_fmt_##Format) { \
@@ -665,8 +792,10 @@ TEST(vtfpp, read_v75) {
 	ASSERT_TRUE(lodControlInfo);
 	EXPECT_EQ(lodControlInfo->flags, Resource::FLAG_LOCAL_DATA);
 	auto lodControlInfoData = lodControlInfo->getDataAsLODControlInfo();
-	EXPECT_EQ(lodControlInfoData.first, 31);
-	EXPECT_EQ(lodControlInfoData.second, 31);
+	EXPECT_EQ(std::get<0>(lodControlInfoData), 31);
+	EXPECT_EQ(std::get<1>(lodControlInfoData), 31);
+	EXPECT_EQ(std::get<2>(lodControlInfoData), 0);
+	EXPECT_EQ(std::get<3>(lodControlInfoData), 0);
 
 	const auto* keyValues = vtf.getResource(Resource::TYPE_KEYVALUES_DATA);
 	ASSERT_TRUE(keyValues);
@@ -805,6 +934,143 @@ TEST(vtfpp, read_v75_nothumb_nomip) {
 
 	const auto* thumbnail = vtf.getResource(Resource::TYPE_THUMBNAIL_DATA);
 	ASSERT_FALSE(thumbnail);
+
+	const auto* image = vtf.getResource(Resource::TYPE_IMAGE_DATA);
+	ASSERT_TRUE(image);
+	EXPECT_EQ(image->flags, Resource::FLAG_NONE);
+	EXPECT_EQ(image->data.size(), ImageFormatDetails::getDataLength(vtf.getFormat(), vtf.getMipCount(), vtf.getFrameCount(), vtf.getFaceCount(), vtf.getWidth(), vtf.getHeight(), vtf.getSliceCount()));
+}
+
+TEST(vtfpp, read_ps3_orangebox) {
+	VTF vtf{fs::readFileBuffer(ASSET_ROOT "vtfpp/ps3_orangebox/portal.ps3.vtf")};
+	ASSERT_TRUE(vtf);
+
+	// Header
+	EXPECT_EQ(vtf.getPlatform(), VTF::PLATFORM_PS3_ORANGEBOX);
+	EXPECT_EQ(vtf.getMajorVersion(), 7);
+	EXPECT_EQ(vtf.getMinorVersion(), 4);
+	EXPECT_EQ(vtf.getWidth(), 1024);
+	EXPECT_EQ(vtf.getHeight(), 1024);
+	EXPECT_EQ(vtf.getFlags(), VTF::FLAG_NO_MIP | VTF::FLAG_NO_LOD);
+	EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT1);
+	EXPECT_EQ(vtf.getMipCount(), 1);
+	EXPECT_EQ(vtf.getFrameCount(), 1);
+	EXPECT_EQ(vtf.getFaceCount(), 1);
+	EXPECT_EQ(vtf.getSliceCount(), 1);
+	EXPECT_EQ(vtf.getStartFrame(), 0);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.037193343f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.020529008f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.016482241f);
+	EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+	EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::EMPTY);
+	EXPECT_EQ(vtf.getThumbnailWidth(), 0);
+	EXPECT_EQ(vtf.getThumbnailHeight(), 0);
+
+	// Resources
+	EXPECT_EQ(vtf.getResources().size(), 1);
+
+	const auto* image = vtf.getResource(Resource::TYPE_IMAGE_DATA);
+	ASSERT_TRUE(image);
+	EXPECT_EQ(image->flags, Resource::FLAG_NONE);
+	EXPECT_EQ(image->data.size(), ImageFormatDetails::getDataLength(vtf.getFormat(), vtf.getMipCount(), vtf.getFrameCount(), vtf.getFaceCount(), vtf.getWidth(), vtf.getHeight(), vtf.getSliceCount()));
+}
+
+TEST(vtfpp, read_ps3_portal2) {
+	{
+		VTF vtf{fs::readFileBuffer(ASSET_ROOT "vtfpp/ps3_portal2/elevator_screen_colour.ps3.vtf")};
+		ASSERT_TRUE(vtf);
+
+		// Header
+		EXPECT_EQ(vtf.getPlatform(), VTF::PLATFORM_PS3_PORTAL2);
+		EXPECT_EQ(vtf.getMajorVersion(), 7);
+		EXPECT_EQ(vtf.getMinorVersion(), 5);
+		EXPECT_EQ(vtf.getWidth(), 256);
+		EXPECT_EQ(vtf.getHeight(), 512);
+		EXPECT_EQ(vtf.getFlags(), VTF::FLAG_NONE);
+		EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT1);
+		EXPECT_EQ(vtf.getMipCount(), 10);
+		EXPECT_EQ(vtf.getFrameCount(), 1);
+		EXPECT_EQ(vtf.getFaceCount(), 1);
+		EXPECT_EQ(vtf.getSliceCount(), 1);
+		EXPECT_EQ(vtf.getStartFrame(), 0);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.050660271f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.050561361f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.048385158f);
+		EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+		EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::EMPTY);
+		EXPECT_EQ(vtf.getThumbnailWidth(), 0);
+		EXPECT_EQ(vtf.getThumbnailHeight(), 0);
+
+		// Resources
+		EXPECT_EQ(vtf.getResources().size(), 1);
+
+		const auto* image = vtf.getResource(Resource::TYPE_IMAGE_DATA);
+		ASSERT_TRUE(image);
+		EXPECT_EQ(image->flags, Resource::FLAG_NONE);
+		EXPECT_EQ(image->data.size(), ImageFormatDetails::getDataLength(vtf.getFormat(), vtf.getMipCount(), vtf.getFrameCount(), vtf.getFaceCount(), vtf.getWidth(), vtf.getHeight(), vtf.getSliceCount()));
+	}
+	{
+		VTF vtf{fs::readFileBuffer(ASSET_ROOT "vtfpp/ps3_portal2/elevator_screen_normal.ps3.vtf")};
+		ASSERT_TRUE(vtf);
+
+		// Header
+		EXPECT_EQ(vtf.getPlatform(), VTF::PLATFORM_PS3_PORTAL2);
+		EXPECT_EQ(vtf.getMajorVersion(), 7);
+		EXPECT_EQ(vtf.getMinorVersion(), 5);
+		EXPECT_EQ(vtf.getWidth(), 256);
+		EXPECT_EQ(vtf.getHeight(), 512);
+		EXPECT_EQ(vtf.getFlags(), VTF::FLAG_NORMAL | VTF::FLAG_MULTI_BIT_ALPHA);
+		EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT5);
+		EXPECT_EQ(vtf.getMipCount(), 10);
+		EXPECT_EQ(vtf.getFrameCount(), 1);
+		EXPECT_EQ(vtf.getFaceCount(), 1);
+		EXPECT_EQ(vtf.getSliceCount(), 1);
+		EXPECT_EQ(vtf.getStartFrame(), 0);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.42064965f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.45285019f);
+		EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.78605181f);
+		EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+		EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::EMPTY);
+		EXPECT_EQ(vtf.getThumbnailWidth(), 0);
+		EXPECT_EQ(vtf.getThumbnailHeight(), 0);
+
+		// Resources
+		EXPECT_EQ(vtf.getResources().size(), 1);
+
+		const auto* image = vtf.getResource(Resource::TYPE_IMAGE_DATA);
+		ASSERT_TRUE(image);
+		EXPECT_EQ(image->flags, Resource::FLAG_NONE);
+		EXPECT_EQ(image->data.size(), ImageFormatDetails::getDataLength(vtf.getFormat(), vtf.getMipCount(), vtf.getFrameCount(), vtf.getFaceCount(), vtf.getWidth(), vtf.getHeight(), vtf.getSliceCount()));
+	}
+}
+
+TEST(vtfpp, read_x360) {
+	VTF vtf{fs::readFileBuffer(ASSET_ROOT "vtfpp/x360/metalwall048b.360.vtf")};
+	ASSERT_TRUE(vtf);
+
+	// Header
+	EXPECT_EQ(vtf.getPlatform(), VTF::PLATFORM_X360);
+	EXPECT_EQ(vtf.getMajorVersion(), 7);
+	EXPECT_EQ(vtf.getMinorVersion(), 4);
+	EXPECT_EQ(vtf.getWidth(), 512);
+	EXPECT_EQ(vtf.getHeight(), 512);
+	EXPECT_EQ(vtf.getFlags(), VTF::FLAG_PWL_CORRECTED | VTF::FLAG_MULTI_BIT_ALPHA);
+	EXPECT_EQ(vtf.getFormat(), ImageFormat::DXT5);
+	EXPECT_EQ(vtf.getMipCount(), 10);
+	EXPECT_EQ(vtf.getFrameCount(), 1);
+	EXPECT_EQ(vtf.getFaceCount(), 1);
+	EXPECT_EQ(vtf.getSliceCount(), 1);
+	EXPECT_EQ(vtf.getStartFrame(), 0);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[0], 0.0389036387f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[1], 0.0300185774f);
+	EXPECT_FLOAT_EQ(vtf.getReflectivity()[2], 0.0235184804f);
+	EXPECT_FLOAT_EQ(vtf.getBumpMapScale(), 1.f);
+	EXPECT_EQ(vtf.getThumbnailFormat(), ImageFormat::EMPTY);
+	EXPECT_EQ(vtf.getThumbnailWidth(), 0);
+	EXPECT_EQ(vtf.getThumbnailHeight(), 0);
+
+	// Resources
+	EXPECT_EQ(vtf.getResources().size(), 1);
 
 	const auto* image = vtf.getResource(Resource::TYPE_IMAGE_DATA);
 	ASSERT_TRUE(image);

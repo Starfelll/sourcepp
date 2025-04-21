@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sourcepp/parser/Binary.h>
-
 #include "../PackFile.h"
 
 namespace vpkpp {

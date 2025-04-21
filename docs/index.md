@@ -3,10 +3,12 @@
   <h1>Source Pretty Parsers</h1>
 </div>
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/craftablescience/sourcepp/build.yml?label=Build&logo=github&logoColor=%23FFFFFF)
-![License](https://img.shields.io/github/license/craftablescience/sourcepp?label=License&logo=libreofficewriter&logoColor=%23FFFFFF)
-![Discord](https://img.shields.io/discord/678074864346857482?label=Discord&logo=Discord&logoColor=%23FFFFFF)
-![Ko-fi](https://img.shields.io/badge/donate-006dae?label=Ko-fi&logo=ko-fi)
+<div>
+  <a href="https://github.com/craftablescience/sourcepp/actions" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/github/actions/workflow/status/craftablescience/sourcepp/build.yml?label=Build&logo=github&logoColor=%23FFFFFF" alt="Build Status" /></a>
+  <a href="https://github.com/craftablescience/sourcepp/blob/main/LICENSE" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/github/license/craftablescience/sourcepp?label=License&logo=libreofficewriter&logoColor=%23FFFFFF" alt="License" /></a>
+  <a href="https://discord.gg/ASgHFkX" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/discord/678074864346857482?label=Discord&logo=Discord&logoColor=%23FFFFFF" alt="Discord" /></a>
+  <a href="https://ko-fi.com/craftablescience" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/donate-006dae?label=Ko-fi&logo=ko-fi" alt="Ko-Fi" /></a>
+</div>
 
 Several modern C++20 libraries for sanely parsing Valve formats, rolled into one big repository.
 
@@ -23,16 +25,28 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
   </tr>
   <tr>
     <td rowspan="1"><code>bsppp</code><sup>*</sup></td>
-    <td><a href="https://developer.valvesoftware.com/wiki/BSP_(Source)">BSP</a> v17-27</td>
+    <td>
+      <a href="https://developer.valvesoftware.com/wiki/BSP_(Source)">BSP</a> v17-27
+      <br> &bull; Console modifications
+      <br> &bull; Left 4 Dead 2 modifications
+      <br> &bull; <a href="https://stratasource.org">Strata Source</a> modifications
+    </td>
     <td align="center">✅</td>
     <td align="center">✅</td>
-    <td rowspan="1" align="center"></td>
+    <td rowspan="1" align="center">Python</td>
   </tr>
   <tr style="background: none;">
     <td rowspan="1"><code>dmxpp</code><sup>*</sup></td>
     <td><a href="https://developer.valvesoftware.com/wiki/DMX">DMX</a> Binary v1-5</td>
     <td align="center">✅</td>
     <td align="center">❌</td>
+    <td rowspan="1" align="center"></td>
+  </tr>
+  <tr>
+    <td rowspan="1"><code>fspp</code><sup>*</sup></td>
+    <td>Source 1 filesystem accessor</td>
+    <td align="center">✅</td>
+    <td align="center">✅</td>
     <td rowspan="1" align="center"></td>
   </tr>
   <tr>
@@ -72,6 +86,18 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td align="center">❌</td>
   </tr>
   <tr>
+    <td rowspan="2"><code>sndpp</code><sup>*</sup></td>
+    <td>WAV</td>
+    <td align="center">✅</td>
+    <td align="center">❌</td>
+    <td rowspan="2" align="center"></td>
+  </tr>
+  <tr>
+    <td>XWV v4</td>
+    <td align="center">✅</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
     <td rowspan="2"><code>steampp</code></td>
     <td>Find Steam install folder</td>
     <td align="center">✅</td>
@@ -87,6 +113,7 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td rowspan="2"><code>toolpp</code></td>
     <td>
       <a href="https://developer.valvesoftware.com/wiki/FGD">FGD (Source 1)</a>
+      <br> &bull; <a href="https://jack.hlfx.ru/en">J.A.C.K.</a> modifications
       <br> &bull; <a href="https://ficool2.github.io/HammerPlusPlus-Website">Hammer++</a> modifications
       <br> &bull; <a href="https://stratasource.org">Strata Source</a> modifications
     </td>
@@ -122,11 +149,6 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td rowspan="15" align="center">C<br>C#</td>
   </tr>
   <tr>
-    <td><a href="https://developer.valvesoftware.com/wiki/Bonus_Maps">BMZ</a></td>
-    <td align="center">✅</td>
-    <td align="center">✅</td>
-  </tr>
-  <tr>
     <td>FPX v10 (Tactical Intervention)</td>
     <td align="center">✅</td>
     <td align="center">✅</td>
@@ -140,6 +162,11 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td>GMA v1-3 (Garry's Mod)</td>
     <td align="center">✅</td>
     <td align="center">✅</td>
+  </tr>
+  <tr>
+    <td>HOG (Descent)</td>
+    <td align="center">✅</td>
+    <td align="center">❌</td>
   </tr>
   <tr>
     <td>OL (Worldcraft Object Library)</td>
@@ -165,16 +192,6 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td align="center">✅</td>
   </tr>
   <tr>
-    <td><a href="https://doomwiki.org/wiki/PK3">PK3</a> (Quake III)</td>
-    <td align="center">✅</td>
-    <td align="center">✅</td>
-  </tr>
-  <tr>
-    <td><a href="https://doomwiki.org/wiki/PK4">PK4</a> (Quake IV, Doom 3)</td>
-    <td align="center">✅</td>
-    <td align="center">✅</td>
-  </tr>
-  <tr>
     <td>
       <a href="https://developer.valvesoftware.com/wiki/VPK">VPK</a> pre-v1, v1-2, v54
       <br> &bull; <a href="https://www.counter-strike.net/cs2">Counter-Strike: 2</a> modifications
@@ -189,21 +206,39 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td align="center">✅</td>
   </tr>
   <tr>
+    <td>VPP v1-3 (Red Faction)</td>
+    <td align="center">✅</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
     <td>WAD v3</td>
     <td align="center">✅</td>
     <td align="center">✅</td>
   </tr>
   <tr>
-    <td>ZIP</td>
+    <td>XZP v6 (Half-Life 2 for XBOX)</td>
+    <td align="center">✅</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
+    <td>
+      ZIP, and some of its aliases:
+      <br> &bull; <a href="https://github.com/BEEmod/BEE2-items">BEE_PACK</a> (BEE2.4 Package)
+      <br> &bull; <a href="https://developer.valvesoftware.com/wiki/Bonus_Maps">BMZ</a> (Source 1 Bonus Maps)
+      <br> &bull; FPK (Tactical Intervention)
+      <br> &bull; <a href="https://doomwiki.org/wiki/PK3">PK3</a> (Quake III)
+      <br> &bull; <a href="https://doomwiki.org/wiki/PK4">PK4</a> (Quake IV, Doom 3)
+      <br> &bull; PKZ (Quake II RTX)
+    </td>
     <td align="center">✅</td>
     <td align="center">✅</td>
   </tr>
   <tr>
-    <td rowspan="14"><code>vtfpp</code></td>
+    <td rowspan="16"><code>vtfpp</code></td>
     <td><a href="https://wiki.mozilla.org/APNG_Specification">APNG</a></td>
     <td align="center">✅</td>
     <td align="center">❌</td>
-    <td rowspan="14" align="center">Python</td>
+    <td rowspan="16" align="center">C<br>Python</td>
   </tr>
   <tr>
     <td><a href="https://en.wikipedia.org/wiki/BMP_file_format">BMP</a></td>
@@ -266,9 +301,22 @@ Several modern C++20 libraries for sanely parsing Valve formats, rolled into one
     <td align="center">✅</td>
   </tr>
   <tr>
+    <td>TTX (TTH, TTZ) v1.0</td>
+    <td align="center">✅</td>
+    <td align="center">✅</td>
+  </tr>
+  <tr>
     <td>
       <a href="https://developer.valvesoftware.com/wiki/VTF_(Valve_Texture_Format)">VTF</a> v7.0-7.6
       <br> &bull; <a href="https://stratasource.org">Strata Source</a> modifications
+    </td>
+    <td align="center">✅</td>
+    <td align="center">✅</td>
+  </tr>
+  <tr>
+    <td>
+      <a href="https://developer.valvesoftware.com/wiki/VTFX_file_format">VTFX</a> X360, PS3 (Orange Box)
+      <br> &bull; PS3 (Portal 2, CS:GO) modifications
     </td>
     <td align="center">✅</td>
     <td align="center">✅</td>
@@ -293,8 +341,10 @@ found on PyPI in the [sourcepp](https://pypi.org/project/sourcepp) package.
 - `steampp` is based on the [SteamAppPathProvider](https://github.com/Trico-Everfire/SteamAppPathProvider) library by [@Trico Everfire](https://github.com/Trico-Everfire) and [Momentum Mod](https://momentum-mod.org) contributors.
 - `vpkpp`'s 007 parser is based on [reverse-engineering work](https://raw.githubusercontent.com/SmileyAG/dumpster/refs/heads/src_jb007nightfirepc_alurazoe/file_format_analysis.txt) by Alhexx.
 - `vpkpp`'s GCF parser was contributed by [@bt](https://github.com/caatge) and [@ymgve](https://github.com/ymgve).
+- `vpkpp`'s HOG parser was contributed by [@erysdren](https://github.com/erysdren).
 - `vpkpp`'s OL parser is based on [reverse-engineering work](https://github.com/erysdren/scratch/blob/main/kaitai/worldcraft_ol.ksy) by [@erysdren](https://github.com/erysdren).
 - `vpkpp`'s ORE parser is based on [reverse-engineering work](https://github.com/erysdren/narbacular-drop-tools) by [@erysdren](https://github.com/erysdren).
+- `vpkpp`'s VPP parser was contributed by [@erysdren](https://github.com/erysdren).
 - `vpkpp`'s WAD3 parser/writer was contributed by [@ozxybox](https://github.com/ozxybox).
 - `vtfpp`'s SHT parser/writer was contributed by [@Trico Everfire](https://github.com/Trico-Everfire).
 - `vtfpp`'s VTF write support is loosely based on work by [@Trico Everfire](https://github.com/Trico-Everfire).
@@ -304,9 +354,11 @@ found on PyPI in the [sourcepp](https://pypi.org/project/sourcepp) package.
 
 A list of projects using the `sourcepp` parser set. If you'd like to see your project here, make a PR!
 
-- [VPKEdit](https://github.com/craftablescience/VPKEdit): An open source MIT-licensed tool that can create, extract from,
-  preview the contents of and write to several pack file formats. A CLI application is bundled with the program which replicates
+- [VPKEdit](https://github.com/craftablescience/VPKEdit): An open source MIT-licensed GUI tool that can create, extract from,
+  preview the contents of and write to several pack file formats. A CLI tool is bundled with the program which replicates
   the functionality of Valve's `vpk.exe`.
+- [MareTF](https://github.com/craftablescience/MareTF): An open source MIT-licensed CLI tool that can create VTFs, with more
+  features and a companion GUI tool planned. Replicates the functionality of Valve's `vtex.exe`.
 - [GodotSource](https://github.com/craftablescience/godotsource): A work-in-progress set of bindings to connect the `sourcepp`
   libraries to Godot. Allows GDScript to work with the libraries, and allows Godot to directly load Source engine assets from
   a user project or from installed Source games.

@@ -25,31 +25,46 @@ using namespace steampp;
 
 namespace {
 
+bool isAppUsingGoldSrcEnginePredicate(std::string_view installDir) {
+	std::filesystem::directory_iterator dirIterator{installDir, std::filesystem::directory_options::skip_permission_denied};
+	std::error_code ec;
+	return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [&ec](const auto& entry){
+		return entry.is_directory(ec) && std::filesystem::exists(entry.path() / "liblist.gam", ec);
+	});
+}
+
 bool isAppUsingSourceEnginePredicate(std::string_view installDir) {
 	std::filesystem::directory_iterator dirIterator{installDir, std::filesystem::directory_options::skip_permission_denied};
-	return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [](const auto& entry){
-		return entry.is_directory() && std::filesystem::exists(entry.path() / "gameinfo.txt");
+	std::error_code ec;
+	return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [&ec](const auto& entry){
+		return entry.is_directory(ec) && std::filesystem::exists(entry.path() / "gameinfo.txt", ec);
 	});
 }
 
 bool isAppUsingSource2EnginePredicate(std::string_view installDir) {
 	std::filesystem::directory_iterator dirIterator{installDir, std::filesystem::directory_options::skip_permission_denied};
-	return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [](const auto& entry) {
-		if (!entry.is_directory()) {
+	std::error_code ec;
+	return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [&ec](const auto& entry) {
+		if (!entry.is_directory(ec)) {
 			return false;
 		}
-		if (std::filesystem::exists(entry.path() / "gameinfo.gi")) {
+		if (std::filesystem::exists(entry.path() / "gameinfo.gi", ec)) {
 			return true;
 		}
 		std::filesystem::directory_iterator subDirIterator{entry.path(), std::filesystem::directory_options::skip_permission_denied};
-		return std::any_of(std::filesystem::begin(subDirIterator), std::filesystem::end(subDirIterator), [](const auto& entry_) {
-			return entry_.is_directory() && std::filesystem::exists(entry_.path() / "gameinfo.gi");
+		return std::any_of(std::filesystem::begin(subDirIterator), std::filesystem::end(subDirIterator), [&ec](const auto& entry_) {
+			return entry_.is_directory(ec) && std::filesystem::exists(entry_.path() / "gameinfo.gi", ec);
 		});
 	});
 }
 
 // Note: this can't be a template because gcc threw a fit. No idea why
 std::unordered_set<AppID> getAppsKnownToUseEngine(bool(*p)(std::string_view)) {
+	if (p == &::isAppUsingGoldSrcEnginePredicate) {
+		return {
+#include "cache/EngineGoldSrc.inl"
+		};
+	}
 	if (p == &::isAppUsingSourceEnginePredicate) {
 		return {
 #include "cache/EngineSource.inl"
@@ -200,11 +215,10 @@ Steam::Steam() {
 		}
 		libraryFolderPath /= "steamapps";
 
-		this->libraryDirs.push_back(libraryFolderPath.string());
-
-		if (!std::filesystem::exists(libraryFolderPath)) {
+		if (!std::filesystem::exists(libraryFolderPath, ec)) {
 			continue;
 		}
+		this->libraryDirs.push_back(libraryFolderPath.string());
 
 		for (const auto& entry : std::filesystem::directory_iterator{libraryFolderPath, std::filesystem::directory_options::skip_permission_denied}) {
 			auto entryName = entry.path().filename().string();
@@ -233,9 +247,9 @@ Steam::Steam() {
 			}
 
 			this->gameDetails[std::stoi(std::string{appID.getValue()})] = GameInfo{
-					.name = std::string{appName.getValue()},
-					.installDir = std::string{appInstallDir.getValue()},
-					.libraryInstallDirsIndex = this->libraryDirs.size() - 1,
+				.name = std::string{appName.getValue()},
+				.installDir = std::string{appInstallDir.getValue()},
+				.libraryInstallDirsIndex = this->libraryDirs.size() - 1,
 			};
 		}
 	}
@@ -282,6 +296,16 @@ std::string Steam::getAppIconPath(AppID appID) const {
 	}
 	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_icon.jpg")).string();
 	if (std::error_code ec; !std::filesystem::exists(path, ec)) {
+		// Currently the icon is the only file with a SHA-1 hash for a name. If this changes then we're fucked (need to make a binary KV1 parser)
+		for (const auto& image : std::filesystem::directory_iterator{std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / std::to_string(appID), std::filesystem::directory_options::skip_permission_denied, ec}) {
+			if (!image.is_regular_file()) {
+				continue;
+			}
+			// SHA-1 = 160 bits -> 20 bytes -> 40 hex chars
+			if (image.path().stem().string().size() == 40) {
+				return image.path().string();
+			}
+		}
 		return "";
 	}
 	return path;
@@ -291,9 +315,12 @@ std::string Steam::getAppLogoPath(AppID appID) const {
 	if (!this->gameDetails.contains(appID)) {
 		return "";
 	}
-	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_logo.png")).string();
+	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / std::to_string(appID) / "logo.png").string();
 	if (std::error_code ec; !std::filesystem::exists(path, ec)) {
-		return "";
+		path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_logo.png")).string();
+		if (!std::filesystem::exists(path, ec)) {
+			return "";
+		}
 	}
 	return path;
 }
@@ -302,9 +329,12 @@ std::string Steam::getAppBoxArtPath(AppID appID) const {
 	if (!this->gameDetails.contains(appID)) {
 		return "";
 	}
-	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_library_600x900.jpg")).string();
+	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / std::to_string(appID) / "library_600x900.jpg").string();
 	if (std::error_code ec; !std::filesystem::exists(path, ec)) {
-		return "";
+		path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_library_600x900.jpg")).string();
+		if (!std::filesystem::exists(path, ec)) {
+			return "";
+		}
 	}
 	return path;
 }
@@ -313,11 +343,18 @@ std::string Steam::getAppStoreArtPath(AppID appID) const {
 	if (!this->gameDetails.contains(appID)) {
 		return "";
 	}
-	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_header.jpg")).string();
+	auto path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / std::to_string(appID) / "header.jpg").string();
 	if (std::error_code ec; !std::filesystem::exists(path, ec)) {
-		return "";
+		path = (std::filesystem::path{this->steamInstallDir} / "appcache" / "librarycache" / (std::to_string(appID) + "_header.jpg")).string();
+		if (!std::filesystem::exists(path, ec)) {
+			return "";
+		}
 	}
 	return path;
+}
+
+bool Steam::isAppUsingGoldSrcEngine(AppID appID) const {
+	return ::isAppUsingEngine<::isAppUsingGoldSrcEnginePredicate>(this, appID);
 }
 
 bool Steam::isAppUsingSourceEngine(AppID appID) const {

@@ -1,5 +1,5 @@
 function(add_sourcepp_library TARGET)
-    cmake_parse_arguments(PARSE_ARGV 1 OPTIONS "C;CSHARP;PYTHON;NO_TEST;BENCH" "" "")
+    cmake_parse_arguments(PARSE_ARGV 1 OPTIONS "C;CSHARP;PYTHON;TEST;BENCH" "" "")
     string(TOUPPER ${TARGET} TARGET_UPPER)
     if(SOURCEPP_USE_${TARGET_UPPER})
         set(PROPAGATE_VARS "")
@@ -17,8 +17,9 @@ function(add_sourcepp_library TARGET)
             configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/sourcepp/Buffer.cs.in"     "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}/Buffer.cs")
             configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/sourcepp/String.cs.in"     "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}/String.cs")
             configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/sourcepp/TARGET.csproj.in" "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}/${TARGET}.csproj")
-            add_custom_target(${TARGET}_csharp DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}/${TARGET}.csproj")
-            add_dependencies(${TARGET}_csharp ${TARGET}c)
+            add_custom_target(sourcepp_${TARGET}_csharp DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}/${TARGET}.csproj")
+            add_dependencies(sourcepp_${TARGET}_csharp sourcepp::${TARGET}c)
+            add_custom_command(TARGET sourcepp::${TARGET}c POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/sourcepp_${TARGET}c${CMAKE_SHARED_LIBRARY_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/lang/csharp/src/${TARGET}")
         endif()
 
         # Add Python
@@ -30,7 +31,7 @@ function(add_sourcepp_library TARGET)
         endif()
 
         # Add tests
-        if(SOURCEPP_BUILD_TESTS AND NOT OPTIONS_NO_TEST)
+        if(SOURCEPP_BUILD_TESTS AND OPTIONS_TEST)
             list(APPEND ${SOURCEPP_TEST_NAME}_DEPS sourcepp::${TARGET})
             list(APPEND ${SOURCEPP_TEST_NAME}_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test/${TARGET}.cpp")
             list(APPEND PROPAGATE_VARS ${SOURCEPP_TEST_NAME}_DEPS ${SOURCEPP_TEST_NAME}_SOURCES)
